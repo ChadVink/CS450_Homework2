@@ -6,3 +6,6 @@ This makefile builds two executables:
 - pipes.x has a sample outer loop for the shell. It allows the user to enter input
   until they hit Ctrl-D, calls a helper function to split each input line into a list
   of words (that is, tokens separated by whitespace), and prints the list.
+-
+
+hi this is john
