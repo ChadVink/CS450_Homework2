@@ -9,3 +9,12 @@ This makefile builds two executables:
 -
 
 hi this is john
+
+
+Hey!
+
+I added logic to take care of the pipes. What we need to do next is implement code to read the user inputs in instead of predefined variables. We also need to take care of redirects!
+It's late when I'm writing this, so if it doesn't make sense, it's because I'm tired.
+
+Take a look at the executable and @ the code. let me know if there are any questions.
+Nick
