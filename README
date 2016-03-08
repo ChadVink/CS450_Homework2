@@ -9,3 +9,11 @@ This makefile builds two executables:
 -
 
 hi this is john
+
+
+Hey!
+
+We need to do redirects as well. Good tutorial here: http://stackoverflow.com/questions/11515399/implementing-shell-in-c-and-need-help-handling-input-output-redirection
+
+Nick
+
