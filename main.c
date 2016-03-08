@@ -10,7 +10,7 @@
 struct command
 {	
 
-	const char ** argv;
+	const char ** parameters;
 
 };
 
@@ -53,8 +53,8 @@ int main() {
 	//	const char *uniq[] = {"uniq", 0};
 //		struct command cmd[] = { {who}, {wc}};
 		struct command cmd[2];
-		cmd[0].argv = who;
-		cmd[1].argv = wc;
+		cmd[0].parameters = who;
+		cmd[1].parameters = wc;
 		// pass the number of commands to PipeFork as well as
 		// the cmd struct with a char** array pointing to 
 		// array of command/parameters. Above is an example in hard
@@ -95,7 +95,7 @@ int CreateProcess(int input, int output, struct command *cmd)
           close(output);
         }
 
-      return execvp(cmd->argv [0], (char * const *)cmd->argv);
+      return execvp(cmd->parameters[0], (char * const *)cmd->parameters);
     }
   /* parent returns pid, should not execute */
   return pid;
@@ -129,5 +129,5 @@ int PipeFork(int params, struct command *cmd)
     dup2(input, 0);
 
   /* exec the command */
-  return execvp(cmd[i].argv[0], (char * const *)cmd[i].argv);
+  return execvp(cmd[i].parameters[0], (char * const *)cmd[i].parameters);
 }
