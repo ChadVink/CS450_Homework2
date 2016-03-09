@@ -27,41 +27,82 @@ int CreateProcess (int in, int out, struct command *cmd);
 int main() {
     // Buffer for reading one line of input
     char line[MAX_LINE_CHARS];
-    char* line_words[MAX_LINE_WORDS + 1];
-    int countpipes = 1;
+    char* line_words[MAX_LINE_WORDS + 1]; 
+    int countpipes; // Number of pipes that are read in
     int num_words;
-	 // Loop until user hits Ctrl-D (end of input)
+    int idx; // index of the word on the line_words
+        //char* currentCommand[MAX_LINE_WORDS + 1];
+
+    // Loop until user hits Ctrl-D (end of input)
     // or some other input error occurs
     while( fgets(line, MAX_LINE_CHARS, stdin) ) {
+        countpipes = 0;
+        idx = 0;
         num_words = split_cmd_line(line, line_words);
-        // Just for demonstration purposes
-        for (int i=0; i < num_words; i++){
-		if (strcmp(line_words[i], "|") == 0)
-    			countpipes++;
-        printf("%s\n", line_words[i]);
-				}
-	}
-	int count2 = 0;
-	int count = 0;
-	struct command cmd[num_words];
-	for (int i = 0; i < num_words; i++) {
-		char *temp[MAX_LINE_WORDS + 1];
-		 if (strcmp(line_words[i], "|") != 0) {
-			printf("line_words[%d] is %s\n", i, line_words[i]);
-			strcat(temp[count2], line_words[i]);
-			puts (temp[count2]);
-			count2++;
-		}
-		if (strcmp (line_words[i], "|") == 0 ) {
-			cmd[count].parameters = *temp;
-			printf("cmd[%d] is equal to %s\n", i, cmd[i]);
-			count++; 
+        int cmdCount = 0;
+        char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
 
-		}
-	}
+        // ls -l -a | less
+        // { { ls, -l, -a }, {less} }
 
-		const char *who[] = { "who", 0};
-		const char *wc[] = {"wc", "-l", 0};
+         while( idx < num_words ){
+            //char* currentCommand[MAX_LINE_WORDS + 1];
+            
+            if(strcmp(line_words[idx], "|") != 0){ // if line_words[idx] is not a "|"
+                commandArray[countpipes][cmdCount] = line_words[idx];
+                cmdCount++;
+            }
+            else{
+                commandArray[countpipes][cmdCount+1] = 0;
+                cmdCount = 0;
+                countpipes++;          
+             }
+            idx++;
+        }
+           //printf("im out\n"); 
+            /*if (idx == 0){
+                char* currentCommand[MAX_LINE_WORDS + 1] = {};
+            }*/
+
+            //if (strcmp(line_words[idx], "|") == 0){
+                //currentCommand[++cmdCount] = 0;
+    		//commandArray[countpipes++] = currentCommand;
+                //cmdCount = 0;
+              //  char* currentCommand[MAX_LINE_WORDS +1] = {};
+            //}else{
+             //   currentCommand[cmdCount++] = line_words[idx];
+            //}
+
+      
+        int j;
+        for( int i = 0; i < countpipes+1; i++ ){
+            j = 0;
+            while(commandArray[i][j] != 0){
+                printf("%s ", commandArray[i][j]);
+                j++;
+            }
+            printf("\n");
+        }
+
+        
+        //struct command cmd[] = currentCommand;
+        //PipeFork(countpipes, cmd);
+        
+         
+         /*for (int i=0; i < num_words; i++){
+	    if (strcmp(line_words[i], "|") == 0){
+    		countpipes++;
+            }
+
+            printf("%s\n", line_words[i]);
+	}
+        printf("%d\n", countpipes);*/
+    }
+	
+
+
+//		const char *who[] = { "who", 0};
+//		const char *wc[] = {"wc", "-l", 0};
 	//	const char *ls[] = {"ls", "-l", 0};
 	//	const char *awk[] = {"awk", "{print $1}", 0 };
 	//	const char *sort[] = {"sort", 0};
@@ -147,3 +188,5 @@ int PipeFork(int params, struct command *cmd)
   /* exec the command */
   return execvp(cmd[i].parameters[0], (char * const *)cmd[i].parameters);
 }
+
+
