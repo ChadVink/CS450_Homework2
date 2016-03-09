@@ -8,9 +8,9 @@
 #include <string.h>
 #include <stdlib.h>
 struct command
-{	
+{
 
-	const char ** argv;
+	const char ** parameters;
 
 };
 
@@ -19,19 +19,20 @@ void syserror(const char* s);
 //int CreateProcess(struct command * cmd, int input, int output);
 //int PipeFork(int n, struct command * cmd);
 
-int PipeFork(int n, struct command *cmd);
-int CreateProcess (int in, int out, struct command *cmd);
+int PipeFork(int n,char* cmdArray[][MAX_LINE_WORDS+1]);
+int CreateProcess (int in, int out, char* cmd[]);
 
 
 
 int main() {
     // Buffer for reading one line of input
     char line[MAX_LINE_CHARS];
-    char* line_words[MAX_LINE_WORDS + 1]; 
+    char* line_words[MAX_LINE_WORDS + 1];
     int countpipes; // Number of pipes that are read in
     int num_words;
     int idx; // index of the word on the line_words
-        //char* currentCommand[MAX_LINE_WORDS + 1];
+    char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+
 
     // Loop until user hits Ctrl-D (end of input)
     // or some other input error occurs
@@ -40,14 +41,11 @@ int main() {
         idx = 0;
         num_words = split_cmd_line(line, line_words);
         int cmdCount = 0;
-        char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+        memset(commandArray, 0, sizeof commandArray);
+        //char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1] = {};
 
-        // ls -l -a | less
-        // { { ls, -l, -a }, {less} }
 
          while( idx < num_words ){
-            //char* currentCommand[MAX_LINE_WORDS + 1];
-            
             if(strcmp(line_words[idx], "|") != 0){ // if line_words[idx] is not a "|"
                 commandArray[countpipes][cmdCount] = line_words[idx];
                 cmdCount++;
@@ -55,26 +53,12 @@ int main() {
             else{
                 commandArray[countpipes][cmdCount+1] = 0;
                 cmdCount = 0;
-                countpipes++;          
+                countpipes++;
              }
             idx++;
         }
-           //printf("im out\n"); 
-            /*if (idx == 0){
-                char* currentCommand[MAX_LINE_WORDS + 1] = {};
-            }*/
 
-            //if (strcmp(line_words[idx], "|") == 0){
-                //currentCommand[++cmdCount] = 0;
-    		//commandArray[countpipes++] = currentCommand;
-                //cmdCount = 0;
-              //  char* currentCommand[MAX_LINE_WORDS +1] = {};
-            //}else{
-             //   currentCommand[cmdCount++] = line_words[idx];
-            //}
-
-      
-        int j;
+       /* int j;
         for( int i = 0; i < countpipes+1; i++ ){
             j = 0;
             while(commandArray[i][j] != 0){
@@ -82,14 +66,15 @@ int main() {
                 j++;
             }
             printf("\n");
-        }
-	//struct command cmd[] = commandArray;
-	//return PipeFork(2, cmd);
-        
+        }*/
+        PipeFork(countpipes+1, commandArray);
+    }
+    
+       printf("here");
+
         //struct command cmd[] = currentCommand;
-        //PipeFork(countpipes, cmd);
         
-         
+
          /*for (int i=0; i < num_words; i++){
 	    if (strcmp(line_words[i], "|") == 0){
     		countpipes++;
@@ -98,20 +83,25 @@ int main() {
             printf("%s\n", line_words[i]);
 	}
         printf("%d\n", countpipes);*/
-    }
-	
 
-
-
-		//const char *who[] = { "who", 0};
-		//const char *wc[] = {"wc", "-l", 0};
+//		const char *who[] = { "who", 0};
+//		const char *wc[] = {"wc", "-l", 0};
 	//	const char *ls[] = {"ls", "-l", 0};
 	//	const char *awk[] = {"awk", "{print $1}", 0 };
 	//	const char *sort[] = {"sort", 0};
 	//	const char *uniq[] = {"uniq", 0};
-//		struct command cmd[] = commandArray;
-//		return PipeFork(2, cmd);
-	//printf("pipes: %d\n", countpipes);	
+//		struct command cmd[] = { {who}, {wc}};
+		//struct command cmd[2];
+		//cmd[0].parameters = who;
+		//cmd[1].parameters = wc;
+		// pass the number of commands to PipeFork as well as
+		// the cmd struct with a char** array pointing to
+		// array of command/parameters. Above is an example in hard
+		// code. We have to take all the inputs from the user and pass
+		// them to the PipeFork command.
+		//return PipeFork(2, cmd);
+	//printf("pipes: %d\n", countpipes);
+	return 0;
 }
 
 
@@ -125,61 +115,65 @@ void syserror(const char *s)
     exit( 1 );
 }
 
-int CreateProcess (int in, int out, struct command *cmd)
+int CreateProcess(int input, int output, char* cmd[] )
 {
+
   pid_t pid;
-
-  if ((pid = fork ()) == 0)
+  /* check to make sure process is the child */
+  if ((pid = fork()) == 0)
     {
-      if (in != 0)
+      /* set in and out accordingly*/
+      if (input != 0)
         {
-          dup2 (in, 0);
-          close (in);
+          dup2(input, 0);
+          close(input);
         }
 
-      if (out != 1)
+      if (output != 1)
         {
-          dup2 (out, 1);
-          close (out);
+          dup2(output, 1);
+          close(output);
         }
 
-      return execvp (cmd->argv [0], (char * const *)cmd->argv);
+      return execvp(cmd[0], cmd);
     }
-
+  /* parent returns pid, should not execute */
   return pid;
 }
 
-int PipeFork(int n, struct command *cmd)
+int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1])
 {
   int i;
   pid_t pid;
-  int in, fd [2];
+  int input;
+  int fd[2];
 
-  /* The first process should get its input from the original file descriptor 0.  */
-  in = 0;
+  if ((pid = fork()) == 0){
 
-  /* Note the loop bound, we spawn here all, but the last stage of the pipeline.  */
-  for (i = 0; i < n - 1; ++i)
-    {
-      pipe (fd);
+      /* first process input end is original fd[0]*/
+      input = 0;
 
-      /* f [1] is the write end of the pipe, we carry `in` from the prev iteration.  */
-      CreateProcess (in, fd [1], cmd + i);
+      /* pipe EVERYTHING EXCEPT the final pipe here */
+      for (i = 0; i < params - 1; i++)
+        {
+          pipe(fd);
 
-      /* No need for the write end of the pipe, the child will write here.  */
-      close (fd [1]);
+          /* write to fd[1], in is transmitted from previous stage of pipe*/
+          CreateProcess(input, fd [1], cmdArray[i]);
+          /* close write end of pipe and save read end of pipe! */
+          close(fd [1]);
+          input = fd[0];
+        }
 
-      /* Keep the read end of the pipe, the next child will read from there.  */
-      in = fd [0];
-    }
+      /* set stdin as read end of prev pipe and output this to fd*/
+      if (input != 0)
+        dup2(input, 0);
 
-  /* Last stage of the pipeline - set stdin be the read end of the previous pipe
- *      and output to the original file descriptor 1. */  
-  if (in != 0)
-    dup2 (in, 0);
+      /* exec the command */
+      return execvp(cmdArray[i][0], cmdArray[i]);
 
-  /* Execute the last stage with the current process. */
-  return execvp (cmd [i].argv [0], (char * const *)cmd [i].argv);
+  }
+  return pid;
 }
 
 
