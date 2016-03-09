@@ -28,31 +28,63 @@ int main() {
     // Buffer for reading one line of input
     char line[MAX_LINE_CHARS];
     char* line_words[MAX_LINE_WORDS + 1];
-    int countpipes = 1;
+    int countpipes; // Number of pipes that are read in
     int num_words;
-	 // Loop until user hits Ctrl-D (end of input)
+    int idx; // index of the word on the line_words
+    char* commandArray[MAX_LINE_WORDS + 1];
+    char currentCommand[MAX_LINE_WORDS + 1];
+
+    // Loop until user hits Ctrl-D (end of input)
     // or some other input error occurs
- /*   while( fgets(line, MAX_LINE_CHARS, stdin) ) {
+    while( fgets(line, MAX_LINE_CHARS, stdin) ) {
+        countpipes = 0;
+        idx = 0;
         num_words = split_cmd_line(line, line_words);
-        // Just for demonstration purposes
-        for (int i=0; i < num_words; i++){
-		if (strcmp(line_words[i], "|") == 0)
-    			countpipes++;
-        //printf("%s\n", line_words[i]);
-				}
-	}*/
+        int cmdCount = 0;
+       
+         while( idx < num_words ){
+            if (idx == 0){
+                char currentCommand[MAX_LINE_WORDS + 1] = {};
+            }
+
+            if (strcmp(line_words[idx], "|") == 0){
+                currentCommand[++cmdCount] = 0;
+    		commandArray[countpipes++] = currentCommand;
+                cmdCount = 0;
+                char currentCommand[MAX_LINE_WORDS +1] = {};
+            }else{
+                currentCommand[cmdCount++] = line_words[idx];
+            }
+
+            idx++;
+        }
+
+        
+        //struct command cmd[] = currentCommand;
+        //PipeFork(countpipes, cmd);
+        
+         
+         /*for (int i=0; i < num_words; i++){
+	    if (strcmp(line_words[i], "|") == 0){
+    		countpipes++;
+            }
+
+            printf("%s\n", line_words[i]);
+	}
+        printf("%d\n", countpipes);*/
+    }
 	
 
 
 
-		const char *who[] = { "who", 0};
-		const char *wc[] = {"wc", "-l", 0};
+	//	const char *who[] = { "who", 0};
+	//	const char *wc[] = {"wc", "-l", 0};
 	//	const char *ls[] = {"ls", "-l", 0};
 	//	const char *awk[] = {"awk", "{print $1}", 0 };
 	//	const char *sort[] = {"sort", 0};
 	//	const char *uniq[] = {"uniq", 0};
-		struct command cmd[] = { {who}, {wc}};
-		return PipeFork(2, cmd);
+	//	struct command cmd[] = { {who}, {wc} };
+	//	return PipeFork(2, cmd);
 	//printf("pipes: %d\n", countpipes);	
 }
 
@@ -123,3 +155,5 @@ int PipeFork(int n, struct command *cmd)
   /* Execute the last stage with the current process. */
   return execvp (cmd [i].argv [0], (char * const *)cmd [i].argv);
 }
+
+
