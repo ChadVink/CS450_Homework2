@@ -27,7 +27,7 @@ int CreateProcess (int in, int out, struct command *cmd);
 int main() {
     // Buffer for reading one line of input
     char line[MAX_LINE_CHARS];
-    char* line_words[MAX_LINE_WORDS + 1]; 
+    char* line_words[MAX_LINE_WORDS + 1];
     int countpipes; // Number of pipes that are read in
     int num_words;
     int idx; // index of the word on the line_words
@@ -47,7 +47,6 @@ int main() {
 
          while( idx < num_words ){
             //char* currentCommand[MAX_LINE_WORDS + 1];
-            
             if(strcmp(line_words[idx], "|") != 0){ // if line_words[idx] is not a "|"
                 commandArray[countpipes][cmdCount] = line_words[idx];
                 cmdCount++;
@@ -55,11 +54,11 @@ int main() {
             else{
                 commandArray[countpipes][cmdCount+1] = 0;
                 cmdCount = 0;
-                countpipes++;          
+                countpipes++;
              }
             idx++;
         }
-           //printf("im out\n"); 
+           //printf("im out\n");
             /*if (idx == 0){
                 char* currentCommand[MAX_LINE_WORDS + 1] = {};
             }*/
@@ -73,7 +72,7 @@ int main() {
              //   currentCommand[cmdCount++] = line_words[idx];
             //}
 
-      
+
         int j;
         for( int i = 0; i < countpipes+1; i++ ){
             j = 0;
@@ -84,11 +83,11 @@ int main() {
             printf("\n");
         }
 
-        
+
         //struct command cmd[] = currentCommand;
         //PipeFork(countpipes, cmd);
-        
-         
+
+
          /*for (int i=0; i < num_words; i++){
 	    if (strcmp(line_words[i], "|") == 0){
     		countpipes++;
@@ -98,7 +97,6 @@ int main() {
 	}
         printf("%d\n", countpipes);*/
     }
-	
 
 
 //		const char *who[] = { "who", 0};
@@ -112,12 +110,12 @@ int main() {
 		//cmd[0].parameters = who;
 		//cmd[1].parameters = wc;
 		// pass the number of commands to PipeFork as well as
-		// the cmd struct with a char** array pointing to 
+		// the cmd struct with a char** array pointing to
 		// array of command/parameters. Above is an example in hard
 		// code. We have to take all the inputs from the user and pass
 		// them to the PipeFork command.
 		//return PipeFork(2, cmd);
-	//printf("pipes: %d\n", countpipes);	
+	//printf("pipes: %d\n", countpipes);
 	return 0;
 }
 
@@ -134,7 +132,7 @@ void syserror(const char *s)
 
 int CreateProcess(int input, int output, struct command *cmd)
 {
-  
+
   pid_t pid;
   /* check to make sure process is the child */
   if ((pid = fork()) == 0)
@@ -164,7 +162,7 @@ int PipeFork(int params, struct command *cmd)
   pid_t pid;
   int input;
   int fd[2];
- 
+
 
   /* first process input end is original fd[0]*/
   input = 0;
@@ -181,7 +179,7 @@ int PipeFork(int params, struct command *cmd)
       input = fd[0];
     }
 
-  /* set stdin as read end of prev pipe and output this to fd*/  
+  /* set stdin as read end of prev pipe and output this to fd*/
   if (input != 0)
     dup2(input, 0);
 
