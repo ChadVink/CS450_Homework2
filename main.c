@@ -83,7 +83,8 @@ int main() {
             }
             printf("\n");
         }
-
+	//struct command cmd[] = commandArray;
+	//return PipeFork(2, cmd);
         
         //struct command cmd[] = currentCommand;
         //PipeFork(countpipes, cmd);
@@ -102,14 +103,14 @@ int main() {
 
 
 
-		const char *who[] = { "who", 0};
-		const char *wc[] = {"wc", "-l", 0};
+		//const char *who[] = { "who", 0};
+		//const char *wc[] = {"wc", "-l", 0};
 	//	const char *ls[] = {"ls", "-l", 0};
 	//	const char *awk[] = {"awk", "{print $1}", 0 };
 	//	const char *sort[] = {"sort", 0};
 	//	const char *uniq[] = {"uniq", 0};
-		struct command cmd[] = { {who}, {wc} };
-		return PipeFork(2, cmd);
+//		struct command cmd[] = commandArray;
+//		return PipeFork(2, cmd);
 	//printf("pipes: %d\n", countpipes);	
 }
 
