@@ -31,8 +31,7 @@ int main() {
     int countpipes; // Number of pipes that are read in
     int num_words;
     int idx; // index of the word on the line_words
-    char* commandArray[MAX_LINE_WORDS + 1];
-    char currentCommand[MAX_LINE_WORDS + 1];
+        //char* currentCommand[MAX_LINE_WORDS + 1];
 
     // Loop until user hits Ctrl-D (end of input)
     // or some other input error occurs
@@ -41,22 +40,46 @@ int main() {
         idx = 0;
         num_words = split_cmd_line(line, line_words);
         int cmdCount = 0;
-       
+        char** commandArray[MAX_LINE_WORDS + 1];
+
          while( idx < num_words ){
-            if (idx == 0){
-                char currentCommand[MAX_LINE_WORDS + 1] = {};
+            char* currentCommand[MAX_LINE_WORDS + 1];
+            
+            while( idx < num_words && strcmp(line_words[idx], "|") != 0){
+                &currentCommand[cmdCount] = &line_words[idx];
+                cmdCount++;
+                idx++;
             }
+            currentCommand[cmdCount+1] = 0;
+    	    &commandArray[countpipes] = &currentCommand;
+            cmdCount = 0;
+             if( idx < num_words && strcmp(line_words[idx], "|") == 0){
+                countpipes++;          
+                idx++;
+             }
+        }
+           //printf("im out\n"); 
+            /*if (idx == 0){
+                char* currentCommand[MAX_LINE_WORDS + 1] = {};
+            }*/
 
-            if (strcmp(line_words[idx], "|") == 0){
-                currentCommand[++cmdCount] = 0;
-    		commandArray[countpipes++] = currentCommand;
-                cmdCount = 0;
-                char currentCommand[MAX_LINE_WORDS +1] = {};
-            }else{
-                currentCommand[cmdCount++] = line_words[idx];
+            //if (strcmp(line_words[idx], "|") == 0){
+                //currentCommand[++cmdCount] = 0;
+    		//commandArray[countpipes++] = currentCommand;
+                //cmdCount = 0;
+              //  char* currentCommand[MAX_LINE_WORDS +1] = {};
+            //}else{
+             //   currentCommand[cmdCount++] = line_words[idx];
+            //}
+
+      
+        int j;
+        for( int i = 0; i < countpipes; i++ ){
+            j = 0;
+            while(commandArray[i][j] != 0){
+                printf("%s\n", commandArray[i][j]);
+                j++;
             }
-
-            idx++;
         }
 
         
