@@ -45,14 +45,12 @@ int main(){
         int cmdCount = 0;
         char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
          while( idx < num_words ){
-	   if (strcmp(line_words[idx], "|") != 0){
+	   if (strcmp(line_words[idx], "|") == 0)
 		order[countpipes-1] = 0;
-		
-	   }            
-	   if (strcmp(line_words[idx], ">") != 0)
+	   if (strcmp(line_words[idx], ">") == 0)
 		order[countpipes-1] = 1;
-           if (strcmp(line_words[idx], "<") != 0)
-                order[countpipes-1] = 2;
+       if (strcmp(line_words[idx], "<") == 0)
+		order[countpipes-1] = 2;
 
 
 
@@ -103,7 +101,8 @@ void syserror(const char *s)
 int CreateRedirect(int input, int output, struct command* cmd, int type){
 	pid_t pid;
 
-	if (type == 1){
+	if (type == 2){
+		// "<" found
 		if ((pid = fork()) == 0)
 		{
 	           if(input){
@@ -116,7 +115,8 @@ int CreateRedirect(int input, int output, struct command* cmd, int type){
 	
 		}
 	}
-	else if (type == 2){
+	else if (type == 1){
+		// ">" found
 		if ((pid = fork()) == 0){
 	           if (output)
 	           {
