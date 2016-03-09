@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 struct command
-{	
+{
 
 	const char ** parameters;
 
@@ -38,12 +38,27 @@ int main() {
         for (int i=0; i < num_words; i++){
 		if (strcmp(line_words[i], "|") == 0)
     			countpipes++;
-        //printf("%s\n", line_words[i]);
+        printf("%s\n", line_words[i]);
 				}
 	}
-	
+	int count2 = 0;
+	int count = 0;
+	struct command cmd[num_words];
+	for (int i = 0; i < num_words; i++) {
+		char *temp[MAX_LINE_WORDS + 1];
+		 if (strcmp(line_words[i], "|") != 0) {
+			printf("line_words[%d] is %s\n", i, line_words[i]);
+			strcat(temp[count2], line_words[i]);
+			puts (temp[count2]);
+			count2++;
+		}
+		if (strcmp (line_words[i], "|") == 0 ) {
+			cmd[count].parameters = *temp;
+			printf("cmd[%d] is equal to %s\n", i, cmd[i]);
+			count++; 
 
-
+		}
+	}
 
 		const char *who[] = { "who", 0};
 		const char *wc[] = {"wc", "-l", 0};
@@ -52,16 +67,17 @@ int main() {
 	//	const char *sort[] = {"sort", 0};
 	//	const char *uniq[] = {"uniq", 0};
 //		struct command cmd[] = { {who}, {wc}};
-		struct command cmd[2];
-		cmd[0].parameters = who;
-		cmd[1].parameters = wc;
+		//struct command cmd[2];
+		//cmd[0].parameters = who;
+		//cmd[1].parameters = wc;
 		// pass the number of commands to PipeFork as well as
 		// the cmd struct with a char** array pointing to 
 		// array of command/parameters. Above is an example in hard
 		// code. We have to take all the inputs from the user and pass
 		// them to the PipeFork command.
-		return PipeFork(2, cmd);
+		//return PipeFork(2, cmd);
 	//printf("pipes: %d\n", countpipes);	
+	return 0;
 }
 
 
