@@ -21,10 +21,10 @@ struct command
 void syserror(const char* s);
 
 int PipeFork(int params,struct  command* cmd, int* order);
-int CreateRedirect(int in, int out, struct command* cmd, int type);
+int CreateRedirect(int in, int out, struct command* cmd, int type, struct command* FileLoc);
 int CreateProcess (int in, int out, struct command* cmd, int type);
 
-
+int TotalNumRedirects = 0;
 
 int main(){
 
@@ -37,7 +37,6 @@ int main(){
     int order[50];
 
 
-
     while( fgets(line, MAX_LINE_CHARS, stdin) ) {
         countpipes = 0;
         idx = 0;
@@ -48,9 +47,13 @@ int main(){
 	   if (strcmp(line_words[idx], "|") == 0)
 		order[countpipes-1] = 0;
 	   if (strcmp(line_words[idx], ">") == 0)
-		order[countpipes-1] = 1;
-       if (strcmp(line_words[idx], "<") == 0)
+	   {	order[countpipes-1] = 1;
+	        TotalNumRedirects++;
+	   }
+       if (strcmp(line_words[idx], "<") == 0){
 		order[countpipes-1] = 2;
+		TotalNumRedirects++;
+	}
 
 
 
@@ -67,7 +70,7 @@ int main(){
              }
             idx++;
         }
-
+	//struct	command cmd[countpipes+1];	
 
         int j;
         for( int i = 0; i < countpipes+1; i++ ){
@@ -77,14 +80,19 @@ int main(){
                 j++;
             }
             printf("\n");
+
         }
      }
 		order[0] = 0;
-		order[1] = 0;
+		order[1] = 1;
+		order[2] = 0; 
+		
 		const char *who[] = { "who", 0};
-		const char *wc[] = {"wc", "-l", 0};
-		struct command cmd[] ={{who},{wc}};
-		return PipeFork(2, cmd, order);
+		const char *wc[] = {"wc","-l", 0};
+		const char *o[] = {"o.txt", 0};
+		const char *u[] = {"i.txt", 0};
+		struct command cmd[] ={{who}, {wc} , {o}};
+		return PipeFork(3, cmd, order);
 }
 
 
@@ -98,7 +106,7 @@ void syserror(const char *s)
     exit( 1 );
 }
 
-int CreateRedirect(int input, int output, struct command* cmd, int type){
+int CreateRedirect(int input, int output, struct command* cmd, int type, struct command* fileloc){
 	pid_t pid;
 
 	if (type == 2){
@@ -106,13 +114,16 @@ int CreateRedirect(int input, int output, struct command* cmd, int type){
 		if ((pid = fork()) == 0)
 		{
 	           if(input){
-	             int fdIn = open(cmd->parameters[0], O_RDONLY);
+	             int fdIn = open(fileloc->parameters[0], O_RDONLY, 0666);
 	             dup2(fdIn, 0);
+		     int fdOut = input;
+		     dup2(fdOut, 1);
+		     close(fdOut);
 	             close(fdIn);
-	             input = 0;
-	           }
-		  execvp(cmd->parameters[0], (char* const*)cmd->parameters);
-	
+	          //   printf("donezo\n");
+	           
+		 return  execvp(cmd->parameters[0], (char* const*)cmd->parameters);
+	}
 		}
 	}
 	else if (type == 1){
@@ -120,13 +131,17 @@ int CreateRedirect(int input, int output, struct command* cmd, int type){
 		if ((pid = fork()) == 0){
 	           if (output)
 	           {
-	             int fdOut = open(cmd->parameters[0], O_WRONLY);
+		     int fdIn = output;
+		     dup2(fdIn, 0);
+	             int fdOut = open(fileloc->parameters[0], O_WRONLY|O_CREAT,0666);
 	             dup2 (fdOut, 1);
 	             close(fdOut);
-	             output = 0;
-	                                                                      
-	          }
-		  execvp(cmd->parameters[0], (char* const*)cmd->parameters);
+		     close(fdIn);
+	             printf("cmd %s\n", cmd->parameters[0]); 
+	                                                                  
+	          
+		 return execvp(cmd->parameters[0], (char* const*)cmd->parameters);
+		   }		
 		}
 	}
 
@@ -152,7 +167,7 @@ int CreateProcess(int input, int output, struct command *cmd, int type)
           dup2(output, 1);
           close(output);
         }
-
+//	printf("nu2: %s\n", cmd->parameters[0]);
       return execvp(cmd->parameters[0], (char * const *)cmd->parameters);
 
     }
@@ -165,34 +180,42 @@ int PipeFork(int params, struct command *cmd, int* order)
   pid_t pid;
   int input;
   int fd[2];
- 
+  int RedirectIdx[params];
+  int NumRedirects = 0; 
 
   /* first process input end is original fd[0]*/
   input = 0;
-
   /* pipe EVERYTHING EXCEPT the final pipe here */
   for (i = 0; i < params - 1; ++i)
   {
       pipe(fd);
-
+	//printf("order %d: %d\n", i, order[i]);
       /* write to fd[1], in is transmitted from previous stage of pipe*/
      if (order[i] == 0){
       CreateProcess(input, fd [1], cmd + i, order[i]);
 	//printf("cond met\n");
+	//close(fd[1]);
+	//input = fd[0];
+	
 	}
-     else if (order[i] > 0){
-      CreateRedirect(input, fd[1], cmd + i, order[i]);
-	//printf("cond2 met\n");
+     else if (order[i] == 1){
+
+      CreateRedirect(fd[1], input, cmd+i , order[i], cmd+(params-i));	
+	}
+     else if (order[i] == 2){
+  
+
+    	CreateRedirect(fd[1], input, cmd+i , order[i], cmd+(params-i));
 	}
 	/* close write end of pipe and save read end of pipe! */
-      close(fd [1]);
-      input = fd[0];
+       close(fd [1]);
+       input = fd[0];
     }
 
   /* set stdin as read end of prev pipe and output this to fd*/  
-  if (input != 0)
+  if (input != 0 && order[i] == 0)
     dup2(input, 0);
-
+ printf("out: %s\n", cmd[i].parameters[0]); 
   /* exec the command */
   return execvp(cmd[i].parameters[0], (char * const *)cmd[i].parameters);
 }
