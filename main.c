@@ -41,7 +41,8 @@ int main() {
         idx = 0;
         num_words = split_cmd_line(line, line_words);
         int cmdCount = 0;
-        //char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+        memset(commandArray, 0, sizeof commandArray);
+        //char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1] = {};
 
 
          while( idx < num_words ){
