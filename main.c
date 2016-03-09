@@ -7,61 +7,86 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h>
+
+
+int help = 1;
 struct command
 {	
 
 	const char ** parameters;
-
+	
 };
 
 void syserror(const char* s);
 
-//int CreateProcess(struct command * cmd, int input, int output);
-//int PipeFork(int n, struct command * cmd);
-
-int PipeFork(int n, struct command *cmd);
-int CreateProcess (int in, int out, struct command *cmd);
+int PipeFork(int params,struct  command* cmd, int* order);
+int CreateRedirect(int in, int out, struct command* cmd, int type);
+int CreateProcess (int in, int out, struct command* cmd, int type);
 
 
 
-int main() {
-    // Buffer for reading one line of input
+int main(){
+
     char line[MAX_LINE_CHARS];
-    char* line_words[MAX_LINE_WORDS + 1];
-    int countpipes = 1;
+    char* line_words[MAX_LINE_WORDS + 1]; 
+    int countpipes; // Number of pipes that are read in
     int num_words;
-	 // Loop until user hits Ctrl-D (end of input)
-    // or some other input error occurs
+    int idx; // index of the word on the line_words
+    char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+    int order[50];
+
+
+
     while( fgets(line, MAX_LINE_CHARS, stdin) ) {
+        countpipes = 0;
+        idx = 0;
         num_words = split_cmd_line(line, line_words);
-        // Just for demonstration purposes
-        for (int i=0; i < num_words; i++){
-		if (strcmp(line_words[i], "|") == 0)
-    			countpipes++;
-        //printf("%s\n", line_words[i]);
-				}
-	}
-	
+        int cmdCount = 0;
+        char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+         while( idx < num_words ){
+	   if (strcmp(line_words[idx], "|") != 0){
+		order[countpipes-1] = 0;
+		
+	   }            
+	   if (strcmp(line_words[idx], ">") != 0)
+		order[countpipes-1] = 1;
+           if (strcmp(line_words[idx], "<") != 0)
+                order[countpipes-1] = 2;
 
 
 
+
+
+	    if(strcmp(line_words[idx], "|") != 0){ // if line_words[idx] is not a "|"
+                commandArray[countpipes][cmdCount] = line_words[idx];
+                cmdCount++;
+            }
+            else{
+                commandArray[countpipes][cmdCount+1] = 0;
+                cmdCount = 0;
+                countpipes++;          
+             }
+            idx++;
+        }
+
+
+        int j;
+        for( int i = 0; i < countpipes+1; i++ ){
+            j = 0;
+            while(commandArray[i][j] != 0){
+                printf("%s ", commandArray[i][j]);
+                j++;
+            }
+            printf("\n");
+        }
+     }
+		order[0] = 0;
+		order[1] = 0;
 		const char *who[] = { "who", 0};
 		const char *wc[] = {"wc", "-l", 0};
-	//	const char *ls[] = {"ls", "-l", 0};
-	//	const char *awk[] = {"awk", "{print $1}", 0 };
-	//	const char *sort[] = {"sort", 0};
-	//	const char *uniq[] = {"uniq", 0};
-//		struct command cmd[] = { {who}, {wc}};
-		struct command cmd[2];
-		cmd[0].parameters = who;
-		cmd[1].parameters = wc;
-		// pass the number of commands to PipeFork as well as
-		// the cmd struct with a char** array pointing to 
-		// array of command/parameters. Above is an example in hard
-		// code. We have to take all the inputs from the user and pass
-		// them to the PipeFork command.
-		return PipeFork(2, cmd);
-	//printf("pipes: %d\n", countpipes);	
+		struct command cmd[] ={{who},{wc}};
+		return PipeFork(2, cmd, order);
 }
 
 
@@ -75,9 +100,42 @@ void syserror(const char *s)
     exit( 1 );
 }
 
-int CreateProcess(int input, int output, struct command *cmd)
-{
-  
+int CreateRedirect(int input, int output, struct command* cmd, int type){
+	pid_t pid;
+
+	if (type == 1){
+		if ((pid = fork()) == 0)
+		{
+	           if(input){
+	             int fdIn = open(cmd->parameters[0], O_RDONLY);
+	             dup2(fdIn, 0);
+	             close(fdIn);
+	             input = 0;
+	           }
+		  execvp(cmd->parameters[0], (char* const*)cmd->parameters);
+	
+		}
+	}
+	else if (type == 2){
+		if ((pid = fork()) == 0){
+	           if (output)
+	           {
+	             int fdOut = open(cmd->parameters[0], O_WRONLY);
+	             dup2 (fdOut, 1);
+	             close(fdOut);
+	             output = 0;
+	                                                                      
+	          }
+		  execvp(cmd->parameters[0], (char* const*)cmd->parameters);
+		}
+	}
+
+
+}
+
+
+int CreateProcess(int input, int output, struct command *cmd, int type)
+{  
   pid_t pid;
   /* check to make sure process is the child */
   if ((pid = fork()) == 0)
@@ -96,12 +154,12 @@ int CreateProcess(int input, int output, struct command *cmd)
         }
 
       return execvp(cmd->parameters[0], (char * const *)cmd->parameters);
+
     }
-  /* parent returns pid, should not execute */
   return pid;
 }
 
-int PipeFork(int params, struct command *cmd)
+int PipeFork(int params, struct command *cmd, int* order)
 {
   int i;
   pid_t pid;
@@ -114,12 +172,19 @@ int PipeFork(int params, struct command *cmd)
 
   /* pipe EVERYTHING EXCEPT the final pipe here */
   for (i = 0; i < params - 1; ++i)
-    {
+  {
       pipe(fd);
 
       /* write to fd[1], in is transmitted from previous stage of pipe*/
-      CreateProcess(input, fd [1], cmd + i);
-      /* close write end of pipe and save read end of pipe! */
+     if (order[i] == 0){
+      CreateProcess(input, fd [1], cmd + i, order[i]);
+	//printf("cond met\n");
+	}
+     else if (order[i] > 0){
+      CreateRedirect(input, fd[1], cmd + i, order[i]);
+	//printf("cond2 met\n");
+	}
+	/* close write end of pipe and save read end of pipe! */
       close(fd [1]);
       input = fd[0];
     }
