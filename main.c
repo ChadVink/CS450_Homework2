@@ -27,7 +27,7 @@ int CreateProcess (int in, int out, struct command *cmd);
 int main() {
     // Buffer for reading one line of input
     char line[MAX_LINE_CHARS];
-    char* line_words[MAX_LINE_WORDS + 1];
+    char* line_words[MAX_LINE_WORDS + 1]; 
     int countpipes; // Number of pipes that are read in
     int num_words;
     int idx; // index of the word on the line_words
@@ -40,23 +40,24 @@ int main() {
         idx = 0;
         num_words = split_cmd_line(line, line_words);
         int cmdCount = 0;
-        char** commandArray[MAX_LINE_WORDS + 1];
+        char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+
+        // ls -l -a | less
+        // { { ls, -l, -a }, {less} }
 
          while( idx < num_words ){
-            char* currentCommand[MAX_LINE_WORDS + 1];
+            //char* currentCommand[MAX_LINE_WORDS + 1];
             
-            while( idx < num_words && strcmp(line_words[idx], "|") != 0){
-                &currentCommand[cmdCount] = &line_words[idx];
+            if(strcmp(line_words[idx], "|") != 0){ // if line_words[idx] is not a "|"
+                commandArray[countpipes][cmdCount] = line_words[idx];
                 cmdCount++;
-                idx++;
             }
-            currentCommand[cmdCount+1] = 0;
-    	    &commandArray[countpipes] = &currentCommand;
-            cmdCount = 0;
-             if( idx < num_words && strcmp(line_words[idx], "|") == 0){
+            else{
+                commandArray[countpipes][cmdCount+1] = 0;
+                cmdCount = 0;
                 countpipes++;          
-                idx++;
              }
+            idx++;
         }
            //printf("im out\n"); 
             /*if (idx == 0){
@@ -74,12 +75,13 @@ int main() {
 
       
         int j;
-        for( int i = 0; i < countpipes; i++ ){
+        for( int i = 0; i < countpipes+1; i++ ){
             j = 0;
             while(commandArray[i][j] != 0){
-                printf("%s\n", commandArray[i][j]);
+                printf("%s ", commandArray[i][j]);
                 j++;
             }
+            printf("\n");
         }
 
         
@@ -100,14 +102,14 @@ int main() {
 
 
 
-	//	const char *who[] = { "who", 0};
-	//	const char *wc[] = {"wc", "-l", 0};
+		const char *who[] = { "who", 0};
+		const char *wc[] = {"wc", "-l", 0};
 	//	const char *ls[] = {"ls", "-l", 0};
 	//	const char *awk[] = {"awk", "{print $1}", 0 };
 	//	const char *sort[] = {"sort", 0};
 	//	const char *uniq[] = {"uniq", 0};
-	//	struct command cmd[] = { {who}, {wc} };
-	//	return PipeFork(2, cmd);
+		struct command cmd[] = { {who}, {wc} };
+		return PipeFork(2, cmd);
 	//printf("pipes: %d\n", countpipes);	
 }
 
