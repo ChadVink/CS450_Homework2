@@ -1,0 +1,5 @@
+Nick Shively
+Chad Vink
+John Cox
+
+Please read the readme for bug information.
