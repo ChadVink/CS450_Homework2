@@ -46,22 +46,24 @@ int main() {
         num_words = split_cmd_line(line, line_words);
         int cmdCount = 0;
         memset(commandArray, 0, sizeof commandArray);
-        memset(order, 0, sizeof order);
+        // memset(order, 0, sizeof order);
         int isDelim = 0;
         //char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1] = {};
 
 
          while( idx < num_words ){
             if (strcmp(line_words[idx], "|") == 0){
-                order[countpipes-1] = 0;
+                order[countpipes] = 0;
                 isDelim = 1;
             }
             if (strcmp(line_words[idx], ">") == 0){
-                order[countpipes-1] = 1;
+                printf("read\n");
+                order[countpipes] = 1;
                 isDelim = 1;
             }
             if (strcmp(line_words[idx], "<") == 0){
-                order[countpipes-1] = 2;
+                printf("read 2\n");
+                order[countpipes] = 2;
                 isDelim = 1;
             }
 
@@ -80,7 +82,7 @@ int main() {
             idx++;
         }
 
-       /* int j;
+        int j;
         for( int i = 0; i < countpipes+1; i++ ){
             j = 0;
             while(commandArray[i][j] != 0){
@@ -88,7 +90,11 @@ int main() {
                 j++;
             }
             printf("\n");
-        }*/
+        }
+        for( int i = 0; i < countpipes; i++){
+            printf("%i ", order[i]);
+        }
+        printf("\n");
         PipeFork(countpipes+1, commandArray, order);
     }
     
@@ -205,33 +211,49 @@ int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1], int order[])
   int i;
   pid_t pid;
   int input;
+  int output;
   int fd[2];
 
   if ((pid = fork()) == 0){
 
       /* first process input end is original fd[0]*/
       input = 0;
+      output = 1;
+
 
       /* pipe EVERYTHING EXCEPT the final pipe here */
       for (i = 0; i < params - 1; i++)
         {
-        pipe(fd);
+        //pipe(fd);
         printf("Order[%i]: %i\n", i, order[i]);
 
         /* write to fd[1], in is transmitted from previous stage of pipe*/
         if (order[i] == 0){
+            pipe(fd);
             CreateProcess(input, fd [1], cmdArray[i]);
+            //i++;
+            //CreateProcess(input, , cmdArray[i]) 
+            close(fd [1]);
+            input = fd[0];
+            //output = fd[1];
             //printf("cond met\n");
         }
-        else if (order[i] > 0){
-            CreateRedirect(input, fd[1], cmdArray[i], order[i]);
+        else if (order[i] == 1){
+            // ">" to output file
+            output = open(cmdArray[i+1][0], O_WRONLY|O_CREAT, 0777 );
+            CreateProcess(input, output, cmdArray[i]);
+            i++;
             //printf("cond2 met\n");
+        }
+        else if (order[i] == 2){
+            // "<" to input file
+            input = open(cmdArray[i+1][0], O_RDONLY, 0777 );
+            CreateProcess(input, output, cmdArray[i]);
+            i++;
         }
         /* close write end of pipe and save read end of pipe! */
 
 
-          close(fd [1]);
-          input = fd[0];
         }
 
       /* set stdin as read end of prev pipe and output this to fd*/

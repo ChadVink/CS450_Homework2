@@ -1,0 +1,5 @@
+ChadVink console  Mar  7 16:16 
+ChadVink ttys000  Mar  8 13:47 
+ChadVink ttys001  Mar  9 16:43 
+ChadVink ttys002  Mar  8 14:10 
+ChadVink ttys008  Mar  8 17:00 
