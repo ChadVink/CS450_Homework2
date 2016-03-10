@@ -7,6 +7,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 struct command
 {
 
@@ -19,9 +22,9 @@ void syserror(const char* s);
 //int CreateProcess(struct command * cmd, int input, int output);
 //int PipeFork(int n, struct command * cmd);
 
-int PipeFork(int n,char* cmdArray[][MAX_LINE_WORDS+1]);
+int PipeFork(int n,char* cmdArray[][MAX_LINE_WORDS+1], int order[]);
 int CreateProcess (int in, int out, char* cmd[]);
-
+int CreateRedirect(int input, int output, char* cmd[], int type);
 
 
 int main() {
@@ -32,6 +35,7 @@ int main() {
     int num_words;
     int idx; // index of the word on the line_words
     char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1];
+    int order[50];
 
 
     // Loop until user hits Ctrl-D (end of input)
@@ -42,11 +46,28 @@ int main() {
         num_words = split_cmd_line(line, line_words);
         int cmdCount = 0;
         memset(commandArray, 0, sizeof commandArray);
+        memset(order, 0, sizeof order);
+        int isDelim = 0;
         //char* commandArray[MAX_LINE_WORDS + 1][MAX_LINE_WORDS + 1] = {};
 
 
          while( idx < num_words ){
-            if(strcmp(line_words[idx], "|") != 0){ // if line_words[idx] is not a "|"
+            if (strcmp(line_words[idx], "|") == 0){
+                order[countpipes-1] = 0;
+                isDelim = 1;
+            }
+            if (strcmp(line_words[idx], ">") == 0){
+                order[countpipes-1] = 1;
+                isDelim = 1;
+            }
+            if (strcmp(line_words[idx], "<") == 0){
+                order[countpipes-1] = 2;
+                isDelim = 1;
+            }
+
+
+
+            if( isDelim == 0){ // if line_words[idx] is not a "|" "<" ">"
                 commandArray[countpipes][cmdCount] = line_words[idx];
                 cmdCount++;
             }
@@ -54,6 +75,7 @@ int main() {
                 commandArray[countpipes][cmdCount+1] = 0;
                 cmdCount = 0;
                 countpipes++;
+                isDelim = 0;
              }
             idx++;
         }
@@ -67,10 +89,10 @@ int main() {
             }
             printf("\n");
         }*/
-        PipeFork(countpipes+1, commandArray);
+        PipeFork(countpipes+1, commandArray, order);
     }
     
-       printf("here");
+       //printf("here");
 
         //struct command cmd[] = currentCommand;
         
@@ -115,6 +137,43 @@ void syserror(const char *s)
     exit( 1 );
 }
 
+int CreateRedirect(int input, int output, char* cmd[], int type){
+        pid_t pid;
+
+        printf("1st step. type: %i cmd: %s\n", type, cmd[0]);
+        if (type == 2){
+                // "<" found
+                if ((pid = fork()) == 0)
+                {
+                   if(input){
+                     int fdIn = open(cmd[0], O_RDONLY);
+                     dup2(fdIn, 0);
+                     close(fdIn);
+                     input = 0;
+                   }
+                  return execvp(cmd[0], cmd);
+        
+                }
+        }
+        else if (type == 1){
+                // ">" found
+                if ((pid = fork()) == 0){
+                   if (output)
+                   {
+                     int fdOut = open(cmd[0], O_WRONLY);
+                     dup2 (fdOut, 1);
+                     close(fdOut);
+                     output = 0;
+                                                                              
+                  }
+                  return execvp(cmd[0], cmd);
+                }
+        }
+    return pid;
+}
+
+
+
 int CreateProcess(int input, int output, char* cmd[] )
 {
 
@@ -141,7 +200,7 @@ int CreateProcess(int input, int output, char* cmd[] )
   return pid;
 }
 
-int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1])
+int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1], int order[])
 {
   int i;
   pid_t pid;
@@ -156,11 +215,21 @@ int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1])
       /* pipe EVERYTHING EXCEPT the final pipe here */
       for (i = 0; i < params - 1; i++)
         {
-          pipe(fd);
+        pipe(fd);
+        printf("Order[%i]: %i\n", i, order[i]);
 
-          /* write to fd[1], in is transmitted from previous stage of pipe*/
-          CreateProcess(input, fd [1], cmdArray[i]);
-          /* close write end of pipe and save read end of pipe! */
+        /* write to fd[1], in is transmitted from previous stage of pipe*/
+        if (order[i] == 0){
+            CreateProcess(input, fd [1], cmdArray[i]);
+            //printf("cond met\n");
+        }
+        else if (order[i] > 0){
+            CreateRedirect(input, fd[1], cmdArray[i], order[i]);
+            //printf("cond2 met\n");
+        }
+        /* close write end of pipe and save read end of pipe! */
+
+
           close(fd [1]);
           input = fd[0];
         }
@@ -173,6 +242,8 @@ int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1])
       return execvp(cmdArray[i][0], cmdArray[i]);
 
   }
+  wait(NULL);
+
   return pid;
 }
 
