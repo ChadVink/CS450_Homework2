@@ -8,12 +8,3 @@ This makefile builds two executables:
   of words (that is, tokens separated by whitespace), and prints the list.
 -
 
-hi this is john
-
-
-Hey!
-
-We need to do redirects as well. Good tutorial here: http://stackoverflow.com/questions/11515399/implementing-shell-in-c-and-need-help-handling-input-output-redirection
-
-Nick
-
