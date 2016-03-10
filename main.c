@@ -176,10 +176,9 @@ int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1], int* order)
   int fd[2];
   int RedirectIdx[params];
   int NumRedirects = 0; 
-
+  if ((pid = fork()) == 0){
   /* first process input end is original fd[0]*/
   input = 0;
-//	int RedirFound = TotalNumRedirects;
   /* pipe EVERYTHING EXCEPT the final pipe here */
   for (i = 0; i < params - 1; ++i)
   {
@@ -188,29 +187,15 @@ int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1], int* order)
       /* write to fd[1], in is transmitted from previous stage of pipe*/
      if (order[i] == 0){
       CreateProcess(input, fd [1], cmdArray[i], order[i]);
-	//printf("cond met\n");
 	//close(fd[1]);
 	//input = fd[0];
 	
 	}
      else if (order[i] == 1){
-      //  RedirectIdx[NumRedirects] = i;
-      //  NumRedirects++;
-
-      CreateRedirect(fd[1], input, cmdArray[i] , order[i], cmdArray[(params-i)]);	
-//	RedirectIdx[NumRedirects] = i;
-//      NumRedirects++;
-//	  RedirFound--;	
+      CreateRedirect(fd[1], input, cmdArray[i] , order[i], cmdArray[(params-i)]);		
 	}
      else if (order[i] == 2){
-      //  RedirectIdx[NumRedirects] = i;
-      //  NumRedirects++;
-  
-
     	CreateRedirect(fd[1], input, cmdArray[i] , order[i], cmdArray[params-i]);
-//        RedirectIdx[NumRedirects] = i;
-//        NumRedirects++;
-//	NumRedirects--;
 	}
 	/* close write end of pipe and save read end of pipe! */
        close(fd [1]);
@@ -220,7 +205,8 @@ int PipeFork(int params, char* cmdArray[][MAX_LINE_WORDS+1], int* order)
   /* set stdin as read end of prev pipe and output this to fd*/  
   if (input != 0 && order[i] == 0)
     dup2(input, 0);
- //printf("out: %s\n", cmd[i].parameters[0]); 
-  /* exec the command */
+ //printf("out: %s\n", cmd[i].parameters[0]);
   return execvp(cmdArray[i][0], cmdArray[i]);
+}
+return pid;
 }
